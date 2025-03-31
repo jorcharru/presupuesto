@@ -3,19 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-class PresupuestoColombiaScreen extends StatefulWidget {
+class PresupuestoUsaScreen extends StatefulWidget {
   @override
-  _PresupuestoColombiaScreenState createState() =>
-      _PresupuestoColombiaScreenState();
+  _PresupuestoUsaScreenState createState() => _PresupuestoUsaScreenState();
 }
 
-class _PresupuestoColombiaScreenState
-    extends State<PresupuestoColombiaScreen> {
+class _PresupuestoUsaScreenState extends State<PresupuestoUsaScreen> {
   List<Map<String, dynamic>> data = [];
   double total = 0;
   double pago = 0;
   double pendiente = 0;
-  double precioDolar = 1;
   String _selectedMonth = 'Enero'; // Mes seleccionado por defecto
   final List<String> _months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -25,20 +22,12 @@ class _PresupuestoColombiaScreenState
   // Controladores para los campos de texto
   List<TextEditingController> _conceptoControllers = [];
   List<TextEditingController> _valorControllers = [];
-  TextEditingController _precioDolarController = TextEditingController();
 
-  // Valores predeterminados para la columna "Concepto"
+  // Valores predeterminados para la columna "Concepto" y "Valor"
   final List<String> _defaultConceptos = [
-    "Daniel", "Pensión Jenny", "Pensión Jorge", "Cuota Apto", "Servicios Apto",
-    "Admon Apto", "Celular", "Icetex", "Arrendo Cartagena", "Servicios Cartagena",
-    "Keren 1 Q.", "Keren 2 Q.", "Cristian 1 Q", "Cristian 2 Q"
+    "Cuota Carro", "Seguro Carros", "Tarjetas", "Gas", "Seguro Vida", "Carwash", "Spotify y Otros"
   ];
-
-  // Valores predeterminados para la columna "Valor"
-  final List<String> _defaultValores = [
-    "350000", "450000", "230000", "2450000", "100000", "300000", "100000", "280000",
-    "700000", "150000", "350000", "350000", "150000", "150000"
-  ];
+  final List<double> _defaultValores = [480, 280, 120, 300, 40, 30, 40];
 
   @override
   void initState() {
@@ -48,12 +37,10 @@ class _PresupuestoColombiaScreenState
 
   void _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedData = prefs.getString('colombia_data_$_selectedMonth');
-    double? savedPrecioDolar = prefs.getDouble('precio_dolar_$_selectedMonth');
+    String? savedData = prefs.getString('usa_data_$_selectedMonth');
     if (savedData != null) {
       setState(() {
         data = List<Map<String, dynamic>>.from(json.decode(savedData));
-        precioDolar = savedPrecioDolar ?? 1;
         _initializeControllers(); // Inicializar controladores con los datos cargados
         calcularTotales();
       });
@@ -62,10 +49,9 @@ class _PresupuestoColombiaScreenState
         data = List.generate(_defaultConceptos.length, (index) {
           return {
             'concepto': _defaultConceptos[index],
-            'valor': double.tryParse(_defaultValores[index]) ?? 0,
+            'valor': _defaultValores[index],
             'verf': false,
             'estado': 'PENDIENTE',
-            'valorDolar': null,
           };
         });
         _initializeControllers(); // Inicializar controladores con datos predeterminados
@@ -79,27 +65,19 @@ class _PresupuestoColombiaScreenState
     }).toList();
 
     _valorControllers = data.map((item) {
-      // Formatear el valor predeterminado con el símbolo "$" y el formato de miles
-      return TextEditingController(text: formatoMoneda(item['valor'] ?? 0));
+      return TextEditingController(text: item['valor']?.toString() ?? '');
     }).toList();
-
-    _precioDolarController = TextEditingController(text: precioDolar.toString());
   }
 
   void _saveData() async {
     // Actualizar la lista `data` con los valores de los controladores
     for (int i = 0; i < data.length; i++) {
       data[i]['concepto'] = _conceptoControllers[i].text;
-      // Eliminar el símbolo "$" y los puntos antes de guardar el valor
-      String valorSinFormato = _valorControllers[i].text.replaceAll('\$', '').replaceAll('.', '');
-      data[i]['valor'] = double.tryParse(valorSinFormato) ?? 0;
+      data[i]['valor'] = double.tryParse(_valorControllers[i].text) ?? 0;
     }
 
-    precioDolar = double.tryParse(_precioDolarController.text) ?? 1;
-
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('colombia_data_$_selectedMonth', json.encode(data));
-    prefs.setDouble('precio_dolar_$_selectedMonth', precioDolar);
+    prefs.setString('usa_data_$_selectedMonth', json.encode(data));
     calcularTotales();
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -121,7 +99,7 @@ class _PresupuestoColombiaScreenState
 
   String formatoMoneda(double valor) {
     if (valor == null) return '';
-    final formatter = NumberFormat('#,##0', 'es_CO'); // Sin decimales
+    final formatter = NumberFormat('#,##0', 'en_US');
     return '\$${formatter.format(valor)}';
   }
 
@@ -129,7 +107,7 @@ class _PresupuestoColombiaScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('PRESUPUESTO COLOMBIA'),
+        title: Text('PRESUPUESTO USA'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -154,39 +132,14 @@ class _PresupuestoColombiaScreenState
                 }).toList(),
               ),
               SizedBox(height: 20),
-              // Precio del dólar con fondo azul claro
-              Container(
-                color: Colors.blue[50], // Color azul claro
-                padding: EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Text('Precio del dólar:'),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _precioDolarController,
-                        keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (value) {
-                          setState(() {
-                            precioDolar =
-                            value.isEmpty ? 1 : double.tryParse(value) ?? 1;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-              // Cuadro de datos con bordes
+              // Cuadro de datos con bordes (cambiamos el color a azul claro)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.black, width: 2),
-                    color: Colors.yellow[100],
+                    color: Colors.blue[100], // Azul claro
                   ),
                   child: Table(
                     defaultColumnWidth: IntrinsicColumnWidth(), // Ajusta el ancho al contenido
@@ -208,12 +161,6 @@ class _PresupuestoColombiaScreenState
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8), // Espacio horizontal
-                            child: Center( // Centrar el texto
-                              child: Text('DOLAR', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8), // Espacio horizontal
                             child: Text('VERF', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                           Padding(
@@ -232,6 +179,9 @@ class _PresupuestoColombiaScreenState
                               padding: EdgeInsets.symmetric(horizontal: 8), // Espacio horizontal
                               child: TextFormField(
                                 controller: _conceptoControllers[index],
+                                style: TextStyle(
+                                  color: item['estado'] == 'PENDIENTE' ? Colors.red : Colors.black,
+                                ),
                                 onChanged: (value) {
                                   item['concepto'] = value;
                                 },
@@ -242,24 +192,13 @@ class _PresupuestoColombiaScreenState
                               child: TextFormField(
                                 controller: _valorControllers[index],
                                 keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  prefixText: '\$',
+                                ),
                                 onChanged: (value) {
-                                  // Formatear el valor ingresado
-                                  String formattedValue = value.replaceAll('\$', '').replaceAll('.', '');
-                                  double parsedValue = double.tryParse(formattedValue) ?? 0;
-                                  _valorControllers[index].text = formatoMoneda(parsedValue);
-                                  item['valor'] = parsedValue;
+                                  item['valor'] = double.tryParse(value) ?? 0;
                                   calcularTotales();
                                 },
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8), // Espacio horizontal
-                              child: Center( // Centrar el texto
-                                child: Text(
-                                  item['valor'] != null
-                                      ? '\$${(item['valor']! / precioDolar).toStringAsFixed(2)}'
-                                      : '\$0.00', // Dos decimales
-                                ),
                               ),
                             ),
                             Padding(
@@ -300,10 +239,9 @@ class _PresupuestoColombiaScreenState
                           'valor': null,
                           'verf': false,
                           'estado': 'PENDIENTE',
-                          'valorDolar': null,
                         });
                         _conceptoControllers.add(TextEditingController());
-                        _valorControllers.add(TextEditingController(text: '\$0'));
+                        _valorControllers.add(TextEditingController());
                       });
                     },
                     child: Text('Agregar línea'),
@@ -311,7 +249,7 @@ class _PresupuestoColombiaScreenState
                   SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: () {
-                      if (data.length > 10) {
+                      if (data.length > 8) {
                         setState(() {
                           data.removeLast();
                           _conceptoControllers.removeLast();
@@ -346,8 +284,7 @@ class _PresupuestoColombiaScreenState
                       Row(
                         children: [
                           Expanded(child: SizedBox()),
-                          Expanded(child: Text('PESOS')),
-                          Expanded(child: Text('DOLAR')),
+                          Expanded(child: Text('VALOR')), // Cambiamos "PESOS" por "VALOR"
                         ],
                       ),
                       Divider(),
@@ -355,7 +292,6 @@ class _PresupuestoColombiaScreenState
                         children: [
                           Expanded(child: Text('TOTAL')),
                           Expanded(child: Text(formatoMoneda(total))),
-                          Expanded(child: Text('\$${(total / precioDolar).toStringAsFixed(2)}')),
                         ],
                       ),
                       Divider(),
@@ -363,7 +299,6 @@ class _PresupuestoColombiaScreenState
                         children: [
                           Expanded(child: Text('PAGO')),
                           Expanded(child: Text(formatoMoneda(pago))),
-                          Expanded(child: Text('\$${(pago / precioDolar).toStringAsFixed(2)}')),
                         ],
                       ),
                       Divider(),
@@ -371,7 +306,6 @@ class _PresupuestoColombiaScreenState
                         children: [
                           Expanded(child: Text('PENDIENTE')),
                           Expanded(child: Text(formatoMoneda(pendiente))),
-                          Expanded(child: Text('\$${(pendiente / precioDolar).toStringAsFixed(2)}')),
                         ],
                       ),
                     ],

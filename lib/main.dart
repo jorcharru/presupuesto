@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'presupuesto_usa_screen.dart';
 import 'presupuesto_colombia_screen.dart';
 
 void main() {
@@ -9,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Presupuesto',
+      title: 'Presupuesto App',
       debugShowCheckedModeBanner: false, // Elimina el banner de depuración
       home: HomeScreen(),
     );
@@ -42,7 +43,7 @@ class HomeScreen extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.only(left: 16), // Espacio a la izquierda
                     child: Text(
-                      'Mi Presupuesto',
+                      'Presupuesto App',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -53,9 +54,9 @@ class HomeScreen extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.only(right: 16), // Espacio a la derecha
                     child: Text(
-                      'Charrupi',
+                      'Jorge Charrupi',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 18,
                         fontStyle: FontStyle.italic,
                         color: Colors.black, // Cambiamos el color para que sea visible
                       ),
@@ -76,15 +77,30 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
+                  MaterialPageRoute(builder: (context) => PresupuestoUsaScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent, // Color del botón
+                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+                textStyle: TextStyle(fontSize: 18),
+              ),
+              child: Text('PRESUPUESTO USA'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
                   MaterialPageRoute(builder: (context) => PresupuestoColombiaScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyan, // Color del botón
-                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 40),
-                textStyle: TextStyle(fontSize: 20),
+                backgroundColor: Colors.yellowAccent, // Color del botón
+                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+                textStyle: TextStyle(fontSize: 18),
               ),
-              child: Text('VER PRESUPUESTO'),
+              child: Text('PRESUPUESTO COLOMBIA'),
             ),
           ],
         ),
