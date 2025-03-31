@@ -1,6 +1,6 @@
-# presupuesto
+# presupuesto_app
 
-A new Flutter project.
+presupuesto mensual Jorge Charrupi
 
 ## Getting Started
 
